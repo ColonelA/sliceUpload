@@ -1,10 +1,14 @@
 import React from 'react';
-import {} from 'antd'
+import { Button } from 'antd'
+import '../styles.css';
 
-function Slicing() {
+function Slicing() {  
   return (
-    <div>
-      Slicing
+    <div className='slicingIndex'>
+      <header className='header'> 
+         <Button type="primary">Upload files</Button>
+      </header> 
+      <main></main>
     </div>
   );
 }
