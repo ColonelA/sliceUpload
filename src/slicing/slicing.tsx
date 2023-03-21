@@ -1,14 +1,53 @@
 import React from 'react';
-import { Button } from 'antd'
+import { Button, Table } from 'antd'
 import '../styles.css';
 
-function Slicing() {  
+function Slicing() {    
+
+ 
+  const dataSource = [
+    {
+      key: '1',
+      name: '胡彦斌',
+      age: 32,
+      address: '西湖区湖底公园1号',
+    },
+    {
+      key: '2',
+      name: '胡彦祖',
+      age: 42,
+      address: '西湖区湖底公园1号',
+    },
+  ];
+  
+  const columns = [
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '年龄',
+      dataIndex: 'age',
+      key: 'age',
+    },
+    {
+      title: '住址',
+      dataIndex: 'address',
+      key: 'address',
+    },
+  ];
+
   return (
     <div className='slicingIndex'>
       <header className='header'> 
          <Button type="primary">Upload files</Button>
       </header> 
-      <main></main>
+      <main>  
+
+       <Table dataSource={dataSource} columns={columns} />
+
+      </main>
     </div>
   );
 }
