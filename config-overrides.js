@@ -2,7 +2,8 @@ const {
   override,    
   addLessLoader,
   fixBabelImports, 
-  adjustStyleLoaders
+  adjustStyleLoaders, 
+  addWebpackModuleRule,
  } = require('customize-cra');
 
 
@@ -11,7 +12,7 @@ module.exports= override(
         lessOptions: {
             javascriptEnabled: true,
             modifyVars: { "@primary-color": "#13c2c2" },
-            },
+        },
     }),  
     adjustStyleLoaders(({ use: [, , postcss] }) => {
         const postcssOptions = postcss.options;
@@ -21,6 +22,19 @@ module.exports= override(
         libraryName: 'antd',
         libraryDirectory: 'es',
         style: 'css',
-    }),
+    }), 
+    addWebpackModuleRule({ 
+        test: /\.worker\.(c|m)?js$/i, 
+        use: [{ 
+           loader: 'worker-loader',
+           options: { 
+            inline: 'fallback',
+           }
+        },  
+        {
+            loader: 'ts-loader',
+        }]
+
+    })
 )
 
