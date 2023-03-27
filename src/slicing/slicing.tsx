@@ -1,5 +1,9 @@
 import React , {  useState , useEffect   } from 'react';
-import { Button, Table, Upload  } from 'antd'; 
+import { Button, Table, Upload } from 'antd';   
+import WorkerBuilder from '../utils/workerBuild'  
+import hashWorker from '../utils/hashWorker'
+// import workerScript from './worker.js';
+
 import '../styles.less';
   
  
@@ -8,11 +12,13 @@ const CHUNK_SIZE = 1 * 1024 * 1024;
  interface FileItem {
     chunk: any;
  }
-
-
+  
 function Slicing() {      
   const [submitFileName,setFileName]  = useState<string>(); 
   const [submitChunkList,setChunkList] = useState<FileItem[]>([]);
+  
+  const [hashPercentage, setHashPercentage] = useState(0); 
+  const [fileHash, setFileHash] = useState<string>("")
 
 
 
@@ -52,7 +58,8 @@ function Slicing() {
 
   const splitFile = (file, size = CHUNK_SIZE) => {   
     const fileChunkList:FileItem[] = []; 
-    let curChunkIndex = 0;
+    let curChunkIndex = 0;  
+     
 
     while (curChunkIndex <= file.size) {   
       const chunk = file.slice(curChunkIndex, curChunkIndex + size); 
@@ -63,40 +70,96 @@ function Slicing() {
     return fileChunkList;
   };
   
-   
+    
+ const calculateHash = (chunkList) => {
+    return new Promise(resolve => { 
+      const worker = new WorkerBuilder(hashWorker)
+  
+      worker.postMessage({ chunkList: chunkList })
+ 
+      worker.onmessage = e => {
+        const { percentage, hash } = e.data;
+        setHashPercentage(percentage);
+        if (hash) {
+           resolve(hash)
+        }
+      }
+
+ 
+
+
+    })
+ }
+
+  
+  const getFileSuffix = (fileName) => {
+    let arr = fileName.split(".");
+    if (arr.length > 0) {
+      return arr[arr.length - 1]
+    }
+    return "";
+  }
+
   
  
   const onBeforeUpload = (file: any) => { 
     if (!file) return;
-    setFileName(String(file.name));
-    const chunkList = splitFile(file)
-    setChunkList(chunkList);
+
+    const chunkList:FileItem[] = splitFile(file);
+    uploadFiles(String(file.name), chunkList);
+ 
+    setFileName(String(file.name))
+    setChunkList(chunkList)
+
     return false
   }   
-
-
-   
-  useEffect(() => { 
-
  
-    if (submitChunkList.length !== 0 ) {
-      
-    } else { 
-       
-      
-    }
+   
+  const isExist = async (fileHash, suffix) => { 
+    // const { data } = await request({
+    //   url: "http://localhost:3001/isExist",
+    //   headers: {
+    //     "content-type": "application/json"
+    //   },
+    //   data: JSON.stringify({
+    //     fileHash: fileHash,
+    //     suffix: suffix
+    //   })
+    // })
+
+
+     return JSON.parse('{}')
+  }
+
+
+  const uploadFiles = async (fileName, chunkList) => {  
+
+    const hash: string | unknown = await calculateHash(chunkList);
+    setFileHash(String(hash))
+ 
+    const { shouldUpload, uploadedChunkList } = await isExist(hash, getFileSuffix(fileName));
+
+     
+
+    
+
+
+     
+  }  
+  
 
 
 
-
-  }, [submitFileName]) 
-
+  
 
 
   return (
     <div className='slicingIndex'>
       <header className='header'> 
-         <Upload beforeUpload={onBeforeUpload}>
+         <Upload 
+           showUploadList={false}
+           beforeUpload={onBeforeUpload} 
+          >
            <Button type="primary">Upload files</Button>
          </Upload>
 

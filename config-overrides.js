@@ -23,18 +23,19 @@ module.exports= override(
         libraryDirectory: 'es',
         style: 'css',
     }), 
-    addWebpackModuleRule({ 
-        test: /\.worker\.(c|m)?js$/i, 
-        use: [{ 
-           loader: 'worker-loader',
-           options: { 
-            inline: 'fallback',
-           }
-        },  
+    addWebpackModuleRule({
+        test: /\.worker\.(c|m)?js$/i,
+        use: [
         {
-            loader: 'ts-loader',
+          loader: 'worker-loader',   
+          
+        },{
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+          },
         }]
-
+ 
     })
 )
 
