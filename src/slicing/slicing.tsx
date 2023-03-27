@@ -1,5 +1,5 @@
-import React , {  useState , useEffect   } from 'react';
-import { Button, Table, Upload } from 'antd';   
+import React , {  useState } from 'react';
+import { Button, Table, Upload, message } from 'antd';   
 import WorkerBuilder from '../utils/workerBuild'  
 import hashWorker from '../utils/hashWorker'
 // import workerScript from './worker.js';
@@ -129,22 +129,78 @@ function Slicing() {
 
 
      return JSON.parse('{}')
+  }  
+
+  const mergeRequest = (indexValue) => {  
+
+    console.log('indexValue', indexValue );
+   
+      
   }
 
 
-  const uploadFiles = async (fileName, chunkList) => {  
+ 
+   
+   const uploadChunks = (chunks, hash) => { 
+      
+    const formItems = chunks.map(({ chunk, hash })=> { 
+      const formItem = new FormData();
+       formItem.append("chunk", chunk);
+       formItem.append("hash", hash);
+       formItem.append("suffix", getFileSuffix(submitFileName));
+ 
+       return { formItem  }
+    })   
 
+  
+
+    Promise.all(formItems).then(() => { 
+       
+      setTimeout(() => {
+        mergeRequest(hash);
+      }, 1000);
+    })
+
+
+  
+   }
+
+
+
+
+  const uploadFiles = async (fileName, chunkList) => {  
+    let uploadedChunkIndexList: number[] = [];
     const hash: string | unknown = await calculateHash(chunkList);
     setFileHash(String(hash))
  
     const { shouldUpload, uploadedChunkList } = await isExist(hash, getFileSuffix(fileName));
 
      
+    if (shouldUpload) {
+       return message.success('Already uploaded')
+    }
+        
 
-    
+    if (uploadedChunkList && uploadedChunkList.length > 0) {
+      uploadedChunkIndexList = uploadedChunkList.map(item => {
+        const arr = item.split("-");
+        return parseInt(arr[arr.length - 1])
+      })
+      console.log("已上传的区块号：" + uploadedChunkIndexList.toString());
+     }
+   
+      
+    const chunks = chunkList.map(({ chunk },index) => ({ 
+      chunk: chunk,
+      hash: hash + "-" + index,
+      progress: 0,
+    })).filter(item2 => {
+      const arr = item2.hash.split("-")
+      return uploadedChunkIndexList.indexOf(parseInt(arr[arr.length - 1])) === -1;
+    }) 
 
-
-     
+    setChunkList(chunks)      
+    uploadChunks(chunks, hash)
   }  
   
 
