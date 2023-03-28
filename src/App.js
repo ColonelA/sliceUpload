@@ -1,5 +1,5 @@
 import Panels from './Panels.tsx'
-import Slicing  from './slicing/slicing.tsx'; 
+import Slicing  from './slicing/slicing.js'; 
 import './styles.less';
 
 function App() {  
