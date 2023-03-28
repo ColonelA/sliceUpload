@@ -2,7 +2,8 @@ import React , {  useState } from 'react';
 import { Button, Table, Upload, message } from 'antd';   
 import WorkerBuilder from '../utils/workerBuild'  
 import hashWorker from '../utils/hashWorker'
-import request from '../utils/request'
+import request from '../utils/request' 
+import typeResult from '../utils/fileType'
 
 import '../styles.less';
   
@@ -11,7 +12,7 @@ const CHUNK_SIZE = 1 * 1024 * 1024;
 
  
 function Slicing() {      
-  const [submitFileName,setFileName]  = useState (); 
+  const [fileType,setFileType]  = useState (); 
   const [submitChunkList,setChunkList] = useState([]);
   
   const [hashPercentage, setHashPercentage] = useState(0); 
@@ -85,24 +86,19 @@ function Slicing() {
     })
  }
 
-  
-  const getFileSuffix = (fileName = '') => {  
-    let arr = fileName.split(".");
-    if (arr.length > 0) {
-      return arr[arr.length - 1]
-    }
-    return "";
-  }
 
-  
  
-  const onBeforeUpload = (file) => { 
+  const onBeforeUpload = async (file) => { 
     if (!file) return;
 
+    const { ext: suffixType } = await typeResult(file)
+
+  
+    debugger
     const chunkList = splitFile(file);
-    uploadFiles(String(file.name), chunkList);
+    uploadFiles(suffixType, chunkList);
  
-    setFileName(String(file.name))
+    setFileType(suffixType)
     setChunkList(chunkList)
 
     return false
@@ -123,7 +119,7 @@ function Slicing() {
     return JSON.parse(data);
   }  
 
-  const mergeRequest = (indexHash) => {  
+  const mergeRequest = (indexHash) => {   
     request({ 
       url: 'http://localhost:3001/merge',
       method: "post",
@@ -132,7 +128,7 @@ function Slicing() {
       }, 
       data: JSON.stringify({
         fileHash: indexHash,
-        suffix: getFileSuffix(submitFileName),
+        suffix: fileType,
         // 用于服务器合并文件
         size: CHUNK_SIZE
       })
@@ -145,7 +141,7 @@ function Slicing() {
       const formItem = new FormData();
        formItem.append("chunk", chunk);
        formItem.append("hash", hash);
-       formItem.append("suffix", getFileSuffix(submitFileName));
+       formItem.append("suffix", fileType);
 
        return { formItem  }
     })   
@@ -175,11 +171,11 @@ function Slicing() {
 
 
 
-  const uploadFiles = async (fileName, chunkList) => {  
+  const uploadFiles = async (indexFileType, chunkList) => {  
     let uploadedChunkIndexList = [];
     const hash = await calculateHash(chunkList);
     setFileHash(String(hash)) 
-    const { shouldUpload, uploadedChunkList } = await isExist(hash, getFileSuffix(fileName));
+    const { shouldUpload, uploadedChunkList } = await isExist(hash, indexFileType);
 
     if (!shouldUpload) {
        return message.success('Already uploaded')
@@ -207,10 +203,7 @@ function Slicing() {
   }  
   
 
-
-
   
-
 
   return (
     <div className='slicingIndex'>

@@ -67,7 +67,7 @@ const mergeChunk = async (filePath, fileHash, size) => {
 
 app.post('/merge', jsonParser, async (req, res) => {
   const { fileHash, suffix, size } = req.body;
-  const filePath = path.resolve(UPLOAD_FILES_DIR, `${fileHash}.${suffix}`);
+  const filePath = path.resolve(UPLOAD_FILES_DIR, `${fileHash}.${suffix}`);    
   await mergeChunk(filePath, fileHash, size);
   res.send({
     code: 200,
