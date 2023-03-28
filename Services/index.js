@@ -87,13 +87,6 @@ const getUploadedChunkList = async (fileHash) => {
 app.post('/verFileIsExist', jsonParser, async (req, res) => {
   const { fileHash, suffix } = req.body;
   const filePath = path.resolve(UPLOAD_FILES_DIR, `${fileHash}.${suffix}`);  
-
-
-  console.log('====================================');
-  console.log( 'filePath',filePath , fse.existsSync(filePath));
-  console.log('====================================');
-
-
   if (fse.existsSync(filePath)) {
     res.send({
       code: 200,
