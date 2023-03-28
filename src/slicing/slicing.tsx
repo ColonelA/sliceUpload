@@ -2,7 +2,7 @@ import React , {  useState } from 'react';
 import { Button, Table, Upload, message } from 'antd';   
 import WorkerBuilder from '../utils/workerBuild'  
 import hashWorker from '../utils/hashWorker'
-// import workerScript from './worker.js';
+import request from '../utils/request'
 
 import '../styles.less';
   
@@ -148,9 +148,22 @@ function Slicing() {
        formItem.append("chunk", chunk);
        formItem.append("hash", hash);
        formItem.append("suffix", getFileSuffix(submitFileName));
- 
+
        return { formItem  }
     })   
+  
+
+    const requestList = formItems.map(({ formData }, index) => {
+      return request({
+        url: "http://localhost:3001/upload",
+        data: formData,
+        onprogress: e => {
+          let list = [...chunksData];
+          list[index].progress = parseInt(String((e.loaded / e.total) * 100));
+          setChunkList(list)
+        }
+      })
+    })
 
   
 
