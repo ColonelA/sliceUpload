@@ -3,10 +3,6 @@ function _check(Buffer, headers) {
     offset: 0
   };
   for (const [index, header] of headers.entries()) { 
- 
-    console.log( header ,  Buffer[index + options.offset]);
-
-
     if (header !== Buffer[index + options.offset]) {
       return false;
     }
@@ -43,14 +39,14 @@ function typeResult(arrayBuffer) {
       mime: 'image/png'
     };
   };
-  if (check([0x50, 0x4D, 0x03, 0x04])) {
-    return {
+  if (check([0x50, 0x4B, 0x3, 0x4])) {
+		return {
       ext: 'zip',
-      mime: 'zip/pkZipFormat'
+      mime: 'application/zip',
     };
   }
 
-   return undefined
+  return undefined
 };
 
   

@@ -1,11 +1,25 @@
-import React , {  useState } from 'react';
-import { Button, Table, Upload, message } from 'antd';   
+import React , {  useState , useMemo } from 'react';
+import { Button, Table, Upload, message, Progress } from 'antd';   
 import WorkerBuilder from '../utils/workerBuild'  
 import hashWorker from '../utils/hashWorker'
 import request from '../utils/request' 
 import typeResult from '../utils/fileType'
 
-import '../styles.less';
+import '../styles.less'; 
+
+
+
+ 
+ //curNum：当前数据，totalNum：总数据，isHasPercentStr：是否返回%字符
+ function getPercent(curNum, totalNum, isHasPercentStr) {
+    curNum = parseFloat(curNum);
+    totalNum = parseFloat(totalNum);
+    if (isNaN(curNum) || isNaN(totalNum)) {
+              return '-';
+    }
+ 
+    return isHasPercentStr ?  totalNum <= 0 ? '0%' : (Math.round(curNum / totalNum * 10000) / 100.00 + '%') : totalNum <= 0 ? 0 : (Math.round(curNum / totalNum * 10000) / 100.00);
+  }
   
  
 const CHUNK_SIZE = 1 * 1024 * 1024; 
@@ -49,7 +63,13 @@ function Slicing() {
     {
       title: '住址',
       dataIndex: 'address',
-      key: 'address',
+      key: 'address',  
+
+      render: (text, operas) => {    
+      const { chunks = [] } = operas;
+      const progressNum = chunks.filter(o => o.progress === 100).length
+      return <Progress steps={chunks.length} percent={chunks.length === progressNum ? 100 : getPercent(chunks.length, progressNum)  } />
+      }
     },
   ];  
 
@@ -58,7 +78,6 @@ function Slicing() {
     const fileChunkList = []; 
     let curChunkIndex = 0;  
      
-
     while (curChunkIndex <= file.size) {   
       const chunk = file.slice(curChunkIndex, curChunkIndex + size); 
       fileChunkList.push({ chunk: chunk, })
@@ -90,16 +109,14 @@ function Slicing() {
  
   const onBeforeUpload = async (file) => { 
     if (!file) return;
+    const { ext: suffixType } = await typeResult(file)  
 
-    const { ext: suffixType } = await typeResult(file)
-
-  
     debugger
-    const chunkList = splitFile(file);
+    const chunkList = splitFile(file);  
+    
     uploadFiles(suffixType, chunkList);
  
     setFileType(suffixType)
-    setChunkList(chunkList)
 
     return false
   }   
@@ -119,7 +136,7 @@ function Slicing() {
     return JSON.parse(data);
   }  
 
-  const mergeRequest = (indexHash) => {   
+  const mergeRequest = (indexHash, indexFileType) => {    
     request({ 
       url: 'http://localhost:3001/merge',
       method: "post",
@@ -128,7 +145,7 @@ function Slicing() {
       }, 
       data: JSON.stringify({
         fileHash: indexHash,
-        suffix: fileType,
+        suffix: indexFileType,
         // 用于服务器合并文件
         size: CHUNK_SIZE
       })
@@ -136,25 +153,28 @@ function Slicing() {
   }
 
 
-   const uploadChunks = (chunks, hash) => {
+   const uploadChunks = (chunks, hash, indexFileType) => {
     const formItems = chunks.map(({ chunk, hash })=> {   
       const formItem = new FormData();
        formItem.append("chunk", chunk);
        formItem.append("hash", hash);
-       formItem.append("suffix", fileType);
+       formItem.append("suffix", indexFileType);
 
        return { formItem  }
     })   
   
-
-    const requestList = formItems.map(({ formItem }, index) => {
+ 
+     const listItem = submitChunkList.find(o => o.hash === hash) || {};
+     const listItemIndex = submitChunkList.length === 0 ? 0 : submitChunkList.findIndex(o => o.hash === hash);
+     const requestList = formItems.map(({ formItem }, index) => {  
       return request({
         url: "http://localhost:3001/upload",
         data: formItem,
         onprogress: e => {
           let list = [...chunks];
-          list[index].progress = parseInt(String((e.loaded / e.total) * 100)); 
-          setChunkList(list)
+          list[index].progress = parseInt(String((e.loaded / e.total) * 100));   
+          submitChunkList[listItemIndex] = {...listItem, chunks: list , hash: hash } 
+          setChunkList(submitChunkList)
         }
       })
     })
@@ -163,7 +183,7 @@ function Slicing() {
 
     Promise.all(requestList).then(() => {  
       setTimeout(() => {
-        mergeRequest(hash);
+        mergeRequest(hash, indexFileType);
       }, 1000);
     })
    }
@@ -198,8 +218,8 @@ function Slicing() {
       return uploadedChunkIndexList.indexOf(parseInt(arr[arr.length - 1])) === -1;
     }) 
 
-    setChunkList(chunks)      
-    uploadChunks(chunks, hash)
+    setChunkList([...submitChunkList, { hash: hash, chunks: chunks }])      
+    uploadChunks(chunks, hash, indexFileType)
   }  
   
 
@@ -217,7 +237,7 @@ function Slicing() {
 
       </header> 
       <main className='main'>  
-        <Table dataSource={dataSource} columns={columns} />
+        <Table dataSource={submitChunkList} columns={columns}  />
       </main>
     </div>
   );
