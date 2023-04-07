@@ -4,14 +4,10 @@ import WorkerBuilder from '../utils/workerBuild'
 import hashWorker from '../utils/hashWorker'
 import request from '../utils/request' 
 import typeResult from '../utils/fileType'
-
 import '../styles.less'; 
 
-
-
- 
- //curNum：当前数据，totalNum：总数据，isHasPercentStr：是否返回%字符
- function getPercent(curNum, totalNum, isHasPercentStr) {
+//curNum：当前数据，totalNum：总数据，isHasPercentStr：是否返回%字符
+function getPercent(curNum, totalNum, isHasPercentStr) {
     curNum = parseFloat(curNum);
     totalNum = parseFloat(totalNum);
     if (isNaN(curNum) || isNaN(totalNum)) {
@@ -26,45 +22,14 @@ const CHUNK_SIZE = 1 * 1024 * 1024;
 
  
 function Slicing() {      
-  const [fileType,setFileType]  = useState (); 
   const [submitChunkList,setChunkList] = useState([]);
   
-  const [hashPercentage, setHashPercentage] = useState(0); 
-  const [fileHash, setFileHash] = useState("")
-
-
-
-  const dataSource = [
-    {
-      key: '1',
-      name: '胡彦斌',
-      age: 32,
-      address: '西湖区湖底公园1号',
-    },
-    {
-      key: '2',
-      name: '胡彦祖',
-      age: 42,
-      address: '西湖区湖底公园1号',
-    },
-  ];
   
   const columns = [
     {
-      title: '姓名',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '年龄',
-      dataIndex: 'age',
-      key: 'age',
-    },
-    {
-      title: '住址',
+      title: '进度',
       dataIndex: 'address',
       key: 'address',  
-
       render: (text, operas) => {    
       const { chunks = [] } = operas;
       const progressNum = chunks.filter(o => o.progress === 100).length
@@ -91,12 +56,10 @@ function Slicing() {
  const calculateHash = (chunkList) => {
     return new Promise(resolve => { 
       const worker = new WorkerBuilder(hashWorker)
-  
       worker.postMessage({ chunkList: chunkList })
- 
       worker.onmessage = e => {
-        const { percentage, hash } = e.data;
-        setHashPercentage(percentage);
+        const { hash } = e.data;
+ 
         if (hash) {
            resolve(hash)
         }
@@ -110,14 +73,8 @@ function Slicing() {
   const onBeforeUpload = async (file) => { 
     if (!file) return;
     const { ext: suffixType } = await typeResult(file)  
-
-    debugger
-    const chunkList = splitFile(file);  
-    
+    const chunkList = splitFile(file);      
     uploadFiles(suffixType, chunkList);
- 
-    setFileType(suffixType)
-
     return false
   }   
  
@@ -194,7 +151,7 @@ function Slicing() {
   const uploadFiles = async (indexFileType, chunkList) => {  
     let uploadedChunkIndexList = [];
     const hash = await calculateHash(chunkList);
-    setFileHash(String(hash)) 
+ 
     const { shouldUpload, uploadedChunkList } = await isExist(hash, indexFileType);
 
     if (!shouldUpload) {

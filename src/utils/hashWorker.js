@@ -1,6 +1,3 @@
-
- 
-
 const hashWorker = () => { 
    // eslint-disable-next-line no-restricted-globals
    self.importScripts("http://localhost:3000/spark-md5.js")

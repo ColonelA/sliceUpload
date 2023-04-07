@@ -52,7 +52,7 @@ const mergeChunk = async (filePath, fileHash, size) => {
   await Promise.all(
     chunkPaths.map((chunkPath, index) =>
       pipeStream(
-        path.resolve(chunksDir, chunkPath),
+         path.resolve(chunksDir, chunkPath),
          fse.createWriteStream(filePath, {
           start: index * size,
           end: (index + 1) * size
